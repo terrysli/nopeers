@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import requests
 from pathlib import Path
 
-from utils import clean_text
+from utils import clean_text, save_html, open_html
 
 BASE_URL = 'https://www.envisionphysicianservices.com'
 CLINICAL_JOB_SEARCH_PATH = "find-a-career/clinical-job-search"
@@ -18,9 +18,6 @@ OUTPUT_FOLDER = "raw"
 #     page_end: last page number to scrape on website
 #     get_urls(2) => ["babynames.com", "babynames.com/2"]
 
-#     NOTE: "babynames.com/1" is NOT included in url output with this fn
-#     """
-
 #     urls = [f"{BASE_URL}/{n}" for n in range(2, page_end + 1)]
 #     urls.insert(0, BASE_URL)
 
@@ -30,6 +27,7 @@ def get_html_document(url):
     """Get HTML document as str from a given URL."""
     try:
         response = requests.get(url)
+        save_html(response.content, "html_content")
         return response.text
     except requests.exceptions.RequestException as e:
         print(f"Error getting HTML from url {url}:", e)
@@ -42,9 +40,10 @@ def scrape_html(html):
     soup = BeautifulSoup(html, 'html.parser')
 
     # Find list of divs containing info for each job
-    results_card_divs = soup.find_all('div', class_="search-results_card")
+    results_card_divs = soup.find_all('div', class_="search-results__card")
+    print("### results_card_divs = ", len(results_card_divs))
 
-    # Dictionary to hold jobs info
+    # List to hold jobs info
     jobs = []
 
     for div in results_card_divs:
@@ -65,6 +64,8 @@ def scrape_html(html):
             "status": clean_text(status),
             "position_type": clean_text(position_type)
         }
+
+        jobs.append(job_info)
 
     return jobs
 
@@ -94,14 +95,15 @@ def scrape_and_write_to_file():
     """Scrape data from pages 1-15 at BASE_URL and write to txt file."""
 
     # Dict to hold {name: [fact, ...], ...}
-    names_facts = {}
+    jobs_info = {}
 
     url = f"{BASE_URL}/{CLINICAL_JOB_SEARCH_PATH}"
     html_doc = get_html_document(url)
     scraped_data = scrape_html(html_doc)
+    jobs_info.update(scraped_data)
 
     write_to_txt_file(
-        data=names_facts,
+        data=jobs_info,
         filename=OUTPUT_FILE_NAME,
         folder=OUTPUT_FOLDER
     )
