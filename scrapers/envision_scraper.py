@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 import requests
 from pathlib import Path
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
 from utils import clean_text, save_html, open_html
 
@@ -14,6 +13,7 @@ CLINICAL_JOB_SEARCH_PATH = "find-a-career/clinical-job-search"
 OUTPUT_FILE_NAME = "envision"
 OUTPUT_FOLDER = "raw"
 CHROMEDRIVER_PATH = "/usr/local/bin/chromedriver"
+CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 # def get_urls(page_end):
 #     """
@@ -29,11 +29,17 @@ CHROMEDRIVER_PATH = "/usr/local/bin/chromedriver"
 def get_html_document(url):
     """Get HTML using chromedriver and save soup object to txt file."""
     try:
-        options = Options()
-        options.headless = True
-        driver = webdriver.Chrome(CHROMEDRIVER_PATH)
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options._ignore_local_proxy = True
+        chrome_options.executable_path = CHROMEDRIVER_PATH
+        chrome_options.binary_location = CHROME_BINARY_PATH
+
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get(url)
-        save_html(driver.page_source, "html_content.txt")
+
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        file = open('html_content.txt', mode='w', encoding='utf-8')
+        file.write(soup.prettify())
         driver.quit()
     except requests.exceptions.RequestException as e:
         print(f"Error getting HTML from url {url}:", e)
