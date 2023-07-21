@@ -1,3 +1,5 @@
+from bs4 import BeautifulSoup
+
 def clean_text(text):
     """
     Remove whitespace before and after in a string.
@@ -16,10 +18,11 @@ def clean_text(text):
 
 def save_html(html, path):
     """Store html in a local file at path."""
-    with open(path, 'wb') as f:
-        f.write(html)
+    soup = BeautifulSoup(html, 'html.parser')
+    file = open(path, mode='w', encoding='utf-8')
+    file.write(soup.prettify())
 
 def open_html(path):
-    """Read html from a local file."""
+    """Read and return html from a local file."""
     with open(path, 'rb') as f:
         return f.read()

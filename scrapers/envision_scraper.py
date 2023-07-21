@@ -1,4 +1,4 @@
-# Scrape names and facts data from Envision website
+# Scrape job data from Envision website.
 
 import json
 from bs4 import BeautifulSoup
@@ -26,8 +26,8 @@ CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chro
 
 #     return urls
 
-def get_html_document(url):
-    """Get HTML using chromedriver and save soup object to txt file."""
+def get_and_save_html(url):
+    """Get HTML using chromedriver and save html in txt file."""
     try:
         chrome_options = webdriver.ChromeOptions()
         chrome_options._ignore_local_proxy = True
@@ -36,11 +36,9 @@ def get_html_document(url):
 
         driver = webdriver.Chrome(options=chrome_options)
         driver.get(url)
-
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        file = open('html_content.txt', mode='w', encoding='utf-8')
-        file.write(soup.prettify())
+        save_html(driver.page_source, 'html_content.txt')
         driver.quit()
+
     except requests.exceptions.RequestException as e:
         print(f"Error getting HTML from url {url}:", e)
 
@@ -61,8 +59,8 @@ def scrape_html(html):
     for div in results_card_divs:
         title = div.find("div", class_="jobTitle").get_text()
         specialty = div.find("div", class_="jobSpecialty").get_text()
-
-        details_divs = div.find_all("div", class_="details").get_text()
+        details = ""
+        details_divs = div.find_all("div", class_="details")
         for details_div in details_divs:
            details += details_div.get_text()
 
