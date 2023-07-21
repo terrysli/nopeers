@@ -4,6 +4,8 @@ import json
 from bs4 import BeautifulSoup
 import requests
 from pathlib import Path
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 from utils import clean_text, save_html, open_html
 
@@ -11,6 +13,7 @@ BASE_URL = 'https://www.envisionphysicianservices.com'
 CLINICAL_JOB_SEARCH_PATH = "find-a-career/clinical-job-search"
 OUTPUT_FILE_NAME = "envision"
 OUTPUT_FOLDER = "raw"
+CHROMEDRIVER_PATH = "/usr/local/bin/chromedriver"
 
 # def get_urls(page_end):
 #     """
@@ -24,11 +27,14 @@ OUTPUT_FOLDER = "raw"
 #     return urls
 
 def get_html_document(url):
-    """Get HTML document as str from a given URL."""
+    """Get HTML using chromedriver and save soup object to txt file."""
     try:
-        response = requests.get(url)
-        save_html(response.content, "html_content")
-        return response.text
+        options = Options()
+        options.headless = True
+        driver = webdriver.Chrome(CHROMEDRIVER_PATH)
+        driver.get(url)
+        save_html(driver.page_source, "html_content.txt")
+        driver.quit()
     except requests.exceptions.RequestException as e:
         print(f"Error getting HTML from url {url}:", e)
 
@@ -44,7 +50,7 @@ def scrape_html(html):
     print("### results_card_divs = ", len(results_card_divs))
 
     # List to hold jobs info
-    jobs = []
+    jobs_info = []
 
     for div in results_card_divs:
         title = div.find("div", class_="jobTitle").get_text()
@@ -57,7 +63,7 @@ def scrape_html(html):
         status = div.find("div", class_="jobStatus").get_text()
         position_type = div.find("div", class_="jobPositionType").get_text()
 
-        job_info = {
+        info = {
             "title": clean_text(title),
             "specialty": clean_text(specialty),
             "details": clean_text(details),
@@ -65,9 +71,9 @@ def scrape_html(html):
             "position_type": clean_text(position_type)
         }
 
-        jobs.append(job_info)
+        jobs_info.append(info)
 
-    return jobs
+    return jobs_info
 
 def write_to_txt_file(data, filename, folder):
     """
